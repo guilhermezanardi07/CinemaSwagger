@@ -130,4 +130,4 @@ ASP.NET Core · Entity Framework Core · PostgreSQL (Npgsql) · Swashbuckle (Swa
 
 ## Equipe
 
-Grupo do Matheus Bernardes: Guilherme (Filmes), _(demais integrantes e suas partes)_
+Grupo: Arthur Lima, Bruno Seleguin, Guilherme Zanardi, Matheus Bernardes, Rafael Dias
