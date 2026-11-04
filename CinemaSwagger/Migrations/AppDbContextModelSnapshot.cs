@@ -93,6 +93,81 @@ namespace CinemaSwagger.Migrations
                             Titulo = "O Poderoso Chefão"
                         });
                 });
+
+            modelBuilder.Entity("CinemaSwagger.Models.Sessao", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.HasIdentityOptions(b.Property<int>("Id"), 100L, null, null, null, null, null);
+
+                    b.Property<int>("Capacidade")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("DataHora")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FilmeId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Preco")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<string>("Sala")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FilmeId");
+
+                    b.HasIndex("Sala", "DataHora");
+
+                    b.ToTable("Sessoes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Capacidade = 80,
+                            DataHora = new DateTime(2026, 12, 15, 22, 30, 0, 0, DateTimeKind.Utc),
+                            FilmeId = 1,
+                            Preco = 25.00m,
+                            Sala = "Sala 1"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Capacidade = 100,
+                            DataHora = new DateTime(2026, 12, 15, 19, 0, 0, 0, DateTimeKind.Utc),
+                            FilmeId = 2,
+                            Preco = 20.00m,
+                            Sala = "Sala 2"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Capacidade = 60,
+                            DataHora = new DateTime(2026, 12, 16, 22, 0, 0, 0, DateTimeKind.Utc),
+                            FilmeId = 3,
+                            Preco = 30.00m,
+                            Sala = "Sala 3"
+                        });
+                });
+
+            modelBuilder.Entity("CinemaSwagger.Models.Sessao", b =>
+                {
+                    b.HasOne("CinemaSwagger.Models.Filme", "Filme")
+                        .WithMany()
+                        .HasForeignKey("FilmeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Filme");
+                });
 #pragma warning restore 612, 618
         }
     }
