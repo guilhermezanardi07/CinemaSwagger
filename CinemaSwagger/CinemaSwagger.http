@@ -1,0 +1,6 @@
+@CinemaSwagger_HostAddress = http://localhost:5254
+
+GET {{CinemaSwagger_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
