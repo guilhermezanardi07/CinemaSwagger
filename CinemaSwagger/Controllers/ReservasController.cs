@@ -14,12 +14,13 @@ public class ReservasController : ControllerBase
 
     public ReservasController(AppDbContext db) => _db = db;
 
-    /// <summary>Lista as reservas cadastradas, com filtros opcionais.</summary>
-    /// <param name="sessaoId">Quando informado, lista somente reservas desta sessão.</param>
-    /// <param name="email">Quando informado, lista somente reservas deste cliente.</param>
-    /// <param name="status">Quando informado, filtra pela situação: Confirmada ou Cancelada.</param>
+    /// <summary>Lista as reservas, com filtros opcionais.</summary>
+    /// <remarks>Sem filtros, devolve todas as reservas, da mais recente para a mais antiga. Os filtros podem ser combinados.</remarks>
+    /// <param name="sessaoId">Filtra pelo Id da sessão (consulte os Ids em GET /api/Sessoes).</param>
+    /// <param name="email">Filtra pelo e-mail do cliente (ex.: ana.souza@email.com).</param>
+    /// <param name="status">Filtra pela situação da reserva: Confirmada ou Cancelada.</param>
     /// <response code="200">Lista de reservas (pode estar vazia).</response>
-    /// <response code="400">SessaoId ou status inválido.</response>
+    /// <response code="400">sessaoId menor ou igual a zero, ou status diferente de Confirmada/Cancelada.</response>
     [HttpGet]
     [ProducesResponseType(typeof(List<ReservaResposta>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -80,10 +81,10 @@ public class ReservasController : ControllerBase
         return reservas.Select(ParaResposta).ToList();
     }
 
-    /// <summary>Busca uma reserva pelo Id.</summary>
-    /// <param name="id">Identificador da reserva.</param>
-    /// <response code="200">Reserva encontrada.</response>
-    /// <response code="404">Reserva não existe.</response>
+    /// <summary>Consulta uma reserva pelo Id.</summary>
+    /// <param name="id">Id da reserva (ex.: 1).</param>
+    /// <response code="200">Reserva encontrada, com título do filme, sala e horário da sessão.</response>
+    /// <response code="404">Não existe reserva com esse Id.</response>
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ReservaResposta), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -100,41 +101,35 @@ public class ReservasController : ControllerBase
             : ParaResposta(reserva);
     }
 
-    /// <summary>Cadastra uma reserva de lugares em uma sessão já existente.</summary>
+    /// <summary>Reserva lugares em uma sessão.</summary>
     /// <remarks>
-    /// Regras de negócio:
-    /// a sessão não pode já ter começado e a quantidade pedida
-    /// não pode passar dos lugares ainda livres (capacidade menos as reservas confirmadas).
-    /// A reserva nasce com status Confirmada.
-    /// O valor total é calculado como preço da sessão x quantidade de lugares.
+    /// Antes de reservar, descubra o Id da sessão em GET /api/Sessoes.
+    /// A reserva é criada com status Confirmada, e o valorTotal é calculado pela API
+    /// (preço da sessão x quantidade de lugares).
+    /// Só é aceita se a sessão ainda não começou e se houver lugares livres
+    /// (capacidade da sessão menos as reservas confirmadas).
     /// </remarks>
-    /// <param name="dto">Dados da reserva a ser cadastrada.</param>
-    /// <response code="201">Reserva criada; Location aponta para a consulta da reserva.</response>
-    /// <response code="400">Dados inválidos.</response>
-    /// <response code="404">Sessão não existe.</response>
-    /// <response code="409">Sessão já começou ou não há lugares suficientes.</response>
+    /// <param name="dto">Sessão, dados do cliente e quantidade de lugares.</param>
+    /// <response code="201">Reserva criada. O cabeçalho Location aponta para a consulta dela.</response>
+    /// <response code="400">Dados inválidos (ex.: nome vazio, e-mail inválido, quantidade fora de 1 a 10).</response>
+    /// <response code="404">Não existe sessão com o sessaoId informado.</response>
+    /// <response code="409">A sessão já começou ou não há lugares livres suficientes. A mensagem diz quantos restam.</response>
     [HttpPost]
     [ProducesResponseType(typeof(ReservaResposta), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErroResposta), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErroResposta), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ReservaResposta>> Cadastrar(ReservaDto dto)
     {
         var sessao = await BuscarSessao(dto.SessaoId);
 
         if (sessao is null)
-            return NotFound(new
-            {
-                mensagem = "Sessão não encontrada."
-            });
+            return NotFound(new ErroResposta("Sessão não encontrada."));
 
         var erro = await ValidarRegras(sessao, dto.QuantidadeLugares);
 
         if (erro is not null)
-            return Conflict(new
-            {
-                mensagem = erro
-            });
+            return Conflict(new ErroResposta(erro));
 
         var reserva = new Reserva
         {
@@ -154,23 +149,23 @@ public class ReservasController : ControllerBase
         );
     }
 
-    /// <summary>Atualiza todos os dados de uma reserva.</summary>
+    /// <summary>Altera os dados de uma reserva.</summary>
     /// <remarks>
-    /// Os lugares da própria reserva não contam como ocupados na checagem de disponibilidade,
-    /// então é possível aumentar ou diminuir a quantidade, ou mudar para outra sessão.
-    /// O valor total é recalculado.
+    /// Envie todos os campos. Serve para trocar o nome, o e-mail, a quantidade de lugares ou a sessão;
+    /// o valorTotal é recalculado. Os lugares da própria reserva não contam como ocupados na conferência.
+    /// Reservas canceladas não podem ser alteradas: reative antes, em PATCH /api/Reservas/{id}/reativar.
     /// </remarks>
-    /// <param name="id">Identificador da reserva.</param>
-    /// <param name="dto">Dados atualizados da reserva.</param>
-    /// <response code="204">Reserva atualizada.</response>
+    /// <param name="id">Id da reserva que será alterada.</param>
+    /// <param name="dto">Novos dados da reserva.</param>
+    /// <response code="204">Reserva alterada (a resposta não tem corpo; consulte a reserva para ver o resultado).</response>
     /// <response code="400">Dados inválidos.</response>
-    /// <response code="404">Reserva ou sessão inexistente.</response>
-    /// <response code="409">Reserva cancelada, sessão já começou ou não há lugares suficientes.</response>
+    /// <response code="404">Não existe reserva com esse Id, ou não existe sessão com o sessaoId informado.</response>
+    /// <response code="409">A reserva está cancelada, a sessão já começou ou não há lugares livres suficientes.</response>
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErroResposta), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Atualizar(int id, ReservaDto dto)
     {
         var reserva = await _db.Reservas.FindAsync(id);
@@ -179,26 +174,17 @@ public class ReservasController : ControllerBase
             return NotFound();
 
         if (reserva.Status == StatusReserva.Cancelada)
-            return Conflict(new
-            {
-                mensagem = "Reserva cancelada não pode ser editada. Use /reativar primeiro."
-            });
+            return Conflict(new ErroResposta("Reserva cancelada não pode ser editada. Use /reativar primeiro."));
 
         var sessao = await BuscarSessao(dto.SessaoId);
 
         if (sessao is null)
-            return NotFound(new
-            {
-                mensagem = "Sessão não encontrada."
-            });
+            return NotFound(new ErroResposta("Sessão não encontrada."));
 
         var erro = await ValidarRegras(sessao, dto.QuantidadeLugares, id);
 
         if (erro is not null)
-            return Conflict(new
-            {
-                mensagem = erro
-            });
+            return Conflict(new ErroResposta(erro));
 
         Aplicar(reserva, dto, sessao);
 
@@ -207,19 +193,20 @@ public class ReservasController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Regra de negócio: cancela uma reserva, liberando os lugares, sem apagá-la.</summary>
+    /// <summary>Cancela uma reserva e libera os lugares.</summary>
     /// <remarks>
-    /// A reserva continua no histórico com status Cancelada.
-    /// Não é possível cancelar uma reserva já cancelada nem de uma sessão que já começou.
+    /// A reserva não é apagada: continua na listagem com status Cancelada.
+    /// Para apagá-la de vez, use DELETE. Não dá para cancelar uma reserva que já está cancelada
+    /// nem de uma sessão que já começou.
     /// </remarks>
-    /// <param name="id">Identificador da reserva.</param>
-    /// <response code="200">Reserva cancelada; retorna a reserva atualizada.</response>
-    /// <response code="404">Reserva não existe.</response>
-    /// <response code="409">Reserva já cancelada ou sessão já começou.</response>
+    /// <param name="id">Id da reserva que será cancelada.</param>
+    /// <response code="200">Reserva cancelada. Retorna a reserva com status Cancelada.</response>
+    /// <response code="404">Não existe reserva com esse Id.</response>
+    /// <response code="409">A reserva já estava cancelada ou a sessão já começou.</response>
     [HttpPatch("{id:int}/cancelar")]
     [ProducesResponseType(typeof(ReservaResposta), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErroResposta), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ReservaResposta>> Cancelar(int id)
     {
         var reserva = await BuscarReservaCompleta(id);
@@ -228,16 +215,10 @@ public class ReservasController : ControllerBase
             return NotFound();
 
         if (reserva.Status == StatusReserva.Cancelada)
-            return Conflict(new
-            {
-                mensagem = "A reserva já está cancelada."
-            });
+            return Conflict(new ErroResposta("A reserva já está cancelada."));
 
         if (reserva.Sessao.DataHora <= DateTime.UtcNow)
-            return Conflict(new
-            {
-                mensagem = "Esta sessão já começou; não é possível cancelar."
-            });
+            return Conflict(new ErroResposta("Esta sessão já começou; não é possível cancelar."));
 
         reserva.Status = StatusReserva.Cancelada;
 
@@ -246,19 +227,19 @@ public class ReservasController : ControllerBase
         return ParaResposta(reserva);
     }
 
-    /// <summary>Regra de negócio: reativa uma reserva cancelada, se ainda houver lugares.</summary>
+    /// <summary>Reativa uma reserva que foi cancelada.</summary>
     /// <remarks>
-    /// Só funciona para reservas com status Cancelada.
-    /// Os lugares são conferidos de novo, pois podem ter sido ocupados por outras reservas.
+    /// Só funciona para reservas com status Cancelada. Os lugares são conferidos de novo,
+    /// porque podem ter sido ocupados por outras reservas enquanto ela esteve cancelada.
     /// </remarks>
-    /// <param name="id">Identificador da reserva.</param>
-    /// <response code="200">Reserva reativada; retorna a reserva atualizada.</response>
-    /// <response code="404">Reserva não existe.</response>
-    /// <response code="409">Reserva não está cancelada, sessão já começou ou não há lugares suficientes.</response>
+    /// <param name="id">Id da reserva que será reativada.</param>
+    /// <response code="200">Reserva reativada. Retorna a reserva com status Confirmada.</response>
+    /// <response code="404">Não existe reserva com esse Id.</response>
+    /// <response code="409">A reserva não está cancelada, a sessão já começou ou não há lugares livres suficientes.</response>
     [HttpPatch("{id:int}/reativar")]
     [ProducesResponseType(typeof(ReservaResposta), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErroResposta), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ReservaResposta>> Reativar(int id)
     {
         var reserva = await BuscarReservaCompleta(id);
@@ -267,18 +248,12 @@ public class ReservasController : ControllerBase
             return NotFound();
 
         if (reserva.Status != StatusReserva.Cancelada)
-            return Conflict(new
-            {
-                mensagem = "Só é possível reativar uma reserva cancelada."
-            });
+            return Conflict(new ErroResposta("Só é possível reativar uma reserva cancelada."));
 
         var erro = await ValidarRegras(reserva.Sessao, reserva.QuantidadeLugares, id);
 
         if (erro is not null)
-            return Conflict(new
-            {
-                mensagem = erro
-            });
+            return Conflict(new ErroResposta(erro));
 
         reserva.Status = StatusReserva.Confirmada;
 
@@ -287,10 +262,11 @@ public class ReservasController : ControllerBase
         return ParaResposta(reserva);
     }
 
-    /// <summary>Exclui uma reserva definitivamente pelo Id.</summary>
-    /// <param name="id">Identificador da reserva.</param>
-    /// <response code="204">Reserva excluída.</response>
-    /// <response code="404">Reserva não existe.</response>
+    /// <summary>Apaga uma reserva definitivamente.</summary>
+    /// <remarks>Diferente de cancelar, a reserva deixa de existir e não aparece mais na listagem.</remarks>
+    /// <param name="id">Id da reserva que será apagada.</param>
+    /// <response code="204">Reserva apagada (a resposta não tem corpo).</response>
+    /// <response code="404">Não existe reserva com esse Id.</response>
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
