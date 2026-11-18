@@ -78,7 +78,38 @@ dotnet ef database update
 | DELETE | `/api/Filmes/{id}` | Exclui filme | 204, 404 |
 | PATCH | `/api/Filmes/{id}/em-cartaz?valor=true` | **Regra de negócio:** coloca ou tira de cartaz | 200, 404 |
 
-### Sessões, Reservas e Disponibilidade
+### Reservas (`/api/Reservas`)
+
+| Método | Rota | Descrição | Respostas |
+|---|---|---|---|
+| GET | `/api/Reservas` | Lista reservas (filtros `sessaoId`, `email` e `status`) | 200, 400 |
+| GET | `/api/Reservas/{id}` | Busca reserva por Id | 200, 404 |
+| POST | `/api/Reservas` | Reserva lugares em uma sessão | 201, 400, 404, 409 |
+| PUT | `/api/Reservas/{id}` | Atualiza reserva (nome, e-mail, quantidade ou sessão) | 204, 400, 404, 409 |
+| DELETE | `/api/Reservas/{id}` | Exclui reserva definitivamente | 204, 404 |
+| PATCH | `/api/Reservas/{id}/cancelar` | **Regra de negócio:** cancela a reserva e libera os lugares | 200, 404, 409 |
+| PATCH | `/api/Reservas/{id}/reativar` | **Regra de negócio:** reativa uma reserva cancelada, se ainda houver lugares | 200, 404, 409 |
+
+Regras aplicadas ao reservar (POST) e ao editar (PUT):
+
+- A sessão precisa existir (404).
+- A sessão não pode já ter começado (409).
+- A quantidade (1 a 10) não pode passar dos lugares livres: capacidade da sessão menos as reservas **confirmadas** (409).
+- O `valorTotal` é calculado pela API (preço da sessão × quantidade).
+- Excluir uma sessão remove também as reservas dela.
+
+`POST /api/Reservas`
+
+```json
+{
+  "sessaoId": 1,
+  "nomeCliente": "Ana Souza",
+  "email": "ana.souza@email.com",
+  "quantidadeLugares": 2
+}
+```
+
+### Sessões e Disponibilidade
 
 Documentados no Swagger conforme forem adicionados pelo grupo.
 
@@ -105,12 +136,13 @@ Documentados no Swagger conforme forem adicionados pelo grupo.
 | 200 | Sucesso (consulta ou ação) |
 | 201 | Recurso criado |
 | 204 | Sucesso sem conteúdo (atualização/exclusão) |
-| 400 | Dados inválidos (ex.: título vazio, duração fora de 1 a 600) |
+| 400 | Dados inválidos (ex.: título vazio, duração fora de 1 a 600, quantidade de lugares 0) |
 | 404 | Recurso não encontrado |
+| 409 | Conflito com uma regra de negócio (ex.: sessão esgotada, horário de sala ocupado) |
 
 ## Dados de exemplo
 
-Ao subir a API, o banco já vem com filmes cadastrados (Interestelar, Divertida Mente e O Poderoso Chefão) para testes e para a apresentação.
+Ao subir a API, o banco já vem com filmes cadastrados (Interestelar, Divertida Mente e O Poderoso Chefão), 3 sessões (Ids 1, 2 e 3) e 2 reservas (Ids 1 e 2) para testes e para a apresentação.
 
 ## Estrutura do projeto
 
