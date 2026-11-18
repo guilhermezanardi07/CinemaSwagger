@@ -151,6 +151,14 @@ public class SessoesController : ControllerBase
                 mensagem = "Filme não encontrado."
             });
 
+        var lugaresReservados = await _db.Reservas
+            .CountAsync(r => r.SessaoId == id);
+        if (dto.Capacidade < lugaresReservados)
+            return Conflict(new
+            {
+                mensagem = "A capacidade não pode ser menor que a quantidade de assentos já reservados."
+            });
+
         if (await ExisteConflito(dto, filme.DuracaoMinutos, id))
             return Conflict(new
             {
