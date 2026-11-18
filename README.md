@@ -80,7 +80,31 @@ dotnet ef database update
 
 ### Sessões, Reservas e Disponibilidade
 
-Documentados no Swagger conforme forem adicionados pelo grupo.
+| Método | Rota | Descrição | Respostas |
+|---|---|---|---|
+| GET | `/api/Sessoes` | Lista sessões (filtro opcional `filmeId`) | 200, 400 |
+| GET | `/api/Sessoes/{id}` | Consulta uma sessão | 200, 404 |
+| POST | `/api/Sessoes` | Cadastra sessão | 201, 400, 404, 409 |
+| PUT | `/api/Sessoes/{id}` | Atualiza sessão | 204, 400, 404, 409 |
+| DELETE | `/api/Sessoes/{id}` | Exclui sessão | 204, 404 |
+| GET | `/api/sessoes/{sessaoId}/disponibilidade` | Consulta capacidade, assentos ocupados e lugares livres | 200, 404 |
+| POST | `/api/Reservas` | Reserva assento livre (`sessaoId`, `assento`) | 201, 400, 404, 409 |
+| GET | `/api/Reservas?sessaoId=1` | Lista reservas da sessão | 200, 400 |
+| DELETE | `/api/Reservas/{id}` | Cancela reserva e libera o assento | 204, 404 |
+
+Os assentos são numerados de `1` até a capacidade da sessão. A soma dos lugares ocupados e disponíveis corresponde à capacidade da sessão. Uma restrição única no banco impede duplicidade mesmo em reservas simultâneas.
+
+Exemplo de resposta de `GET /api/sessoes/1/disponibilidade`:
+
+```json
+{
+  "sessaoId": 1,
+  "capacidade": 80,
+  "lugaresOcupados": 1,
+  "lugaresDisponiveis": 79,
+  "assentosOcupados": ["12"]
+}
+```
 
 ## Exemplo de requisição
 
