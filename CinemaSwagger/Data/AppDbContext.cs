@@ -9,7 +9,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Filme> Filmes => Set<Filme>();
     public DbSet<Sessao> Sessoes => Set<Sessao>();
-    // Colegas: DbSet<Reserva> Reservas...
+    public DbSet<Reserva> Reservas => Set<Reserva>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -22,6 +22,14 @@ public class AppDbContext : DbContext
 
         mb.Entity<Sessao>().Property(s => s.Preco).HasPrecision(10, 2);
         mb.Entity<Sessao>().HasIndex(s => new { s.Sala, s.DataHora });
+
+        mb.Entity<Reserva>()
+            .HasOne(r => r.Sessao)
+            .WithMany()
+            .HasForeignKey(r => r.SessaoId)
+            .OnDelete(DeleteBehavior.Cascade);
+        mb.Entity<Reserva>().HasIndex(r => new { r.SessaoId, r.Assento }).IsUnique();
+        mb.Entity<Reserva>().Property(r => r.Assento).HasMaxLength(5).IsRequired();
 
         // IDs do seed são 1, 2 e 3; novos IDs gerados começam em 100.
         mb.Entity<Sessao>().Property(s => s.Id)
