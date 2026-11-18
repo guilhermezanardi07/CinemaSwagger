@@ -22,6 +22,18 @@ namespace CinemaSwagger.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("CinemaSwagger.Models.Reserva", b =>
+                {
+                    b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("integer");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<string>("Assento").IsRequired().HasMaxLength(5).HasColumnType("character varying(5)");
+                    b.Property<DateTime>("CriadaEm").HasColumnType("timestamp with time zone");
+                    b.Property<int>("SessaoId").HasColumnType("integer");
+                    b.HasKey("Id");
+                    b.HasIndex("SessaoId", "Assento").IsUnique();
+                    b.ToTable("Reservas");
+                });
+
             modelBuilder.Entity("CinemaSwagger.Models.Filme", b =>
                 {
                     b.Property<int>("Id")
@@ -156,6 +168,13 @@ namespace CinemaSwagger.Migrations
                             Preco = 30.00m,
                             Sala = "Sala 3"
                         });
+                });
+
+            modelBuilder.Entity("CinemaSwagger.Models.Reserva", b =>
+                {
+                    b.HasOne("CinemaSwagger.Models.Sessao", "Sessao")
+                        .WithMany().HasForeignKey("SessaoId").OnDelete(DeleteBehavior.Cascade).IsRequired();
+                    b.Navigation("Sessao");
                 });
 
             modelBuilder.Entity("CinemaSwagger.Models.Sessao", b =>
