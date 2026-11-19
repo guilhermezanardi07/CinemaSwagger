@@ -20,7 +20,11 @@ builder.Services.AddSwaggerGen(o =>
         "A API calcula o valor total e só aceita se a sessão ainda não começou e se houver lugares livres.\n" +
         "3. Consulte em `GET /api/Reservas` (filtros: `sessaoId`, `email` e `status`) ou em `GET /api/Reservas/{id}`.\n" +
         "4. Se o cliente mudar de ideia: `PATCH /api/Reservas/{id}/cancelar` libera os lugares e mantém o registro; " +
-        "`PATCH /api/Reservas/{id}/reativar` desfaz o cancelamento; `PUT` altera os dados; `DELETE` apaga de vez."
+        "`PATCH /api/Reservas/{id}/reativar` desfaz o cancelamento; `PUT` altera os dados; `DELETE` apaga de vez.\n\n" +
+        "### Como usar a parte de Disponibilidade\n" +
+        "`GET /api/Disponibilidade` mostra, para cada sessão, quantos lugares estão reservados e quantos ainda estão livres " +
+        "(filtros: `filmeId`, `apenasComLugares`, `apenasFuturas`). `GET /api/Disponibilidade/{sessaoId}` consulta uma sessão. " +
+        "Só reservas **Confirmadas** ocupam lugares."
     });
     o.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
 });

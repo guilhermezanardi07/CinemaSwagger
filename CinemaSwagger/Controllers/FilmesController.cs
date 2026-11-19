@@ -76,15 +76,20 @@ public class FilmesController : ControllerBase
 
     /// <summary>Exclui um filme.</summary>
     /// <param name="id">Identificador do filme.</param>
+    /// <remarks>Não é possível excluir um filme que tenha sessões cadastradas; exclua ou mude as sessões antes.</remarks>
     /// <response code="204">Excluído com sucesso.</response>
     /// <response code="404">Filme não existe.</response>
+    /// <response code="409">O filme possui sessões cadastradas.</response>
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErroResposta), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Excluir(int id)
     {
         var filme = await _db.Filmes.FindAsync(id);
         if (filme is null) return NotFound();
+        if (await _db.Sessoes.AnyAsync(s => s.FilmeId == id))
+            return Conflict(new ErroResposta("Este filme possui sessões cadastradas e não pode ser excluído."));
         _db.Filmes.Remove(filme);
         await _db.SaveChangesAsync();
         return NoContent();

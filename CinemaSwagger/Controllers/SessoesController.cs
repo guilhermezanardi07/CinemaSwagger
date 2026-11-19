@@ -1,4 +1,3 @@
-
 using CinemaSwagger.Data;
 using CinemaSwagger.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -83,8 +82,8 @@ public class SessoesController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(SessaoResposta), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErroResposta), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErroResposta), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<SessaoResposta>> Cadastrar(SessaoDto dto)
     {
         if (!EntradaValida(dto))
@@ -93,16 +92,10 @@ public class SessoesController : ControllerBase
         var filme = await _db.Filmes.FindAsync(dto.FilmeId);
 
         if (filme is null)
-            return NotFound(new
-            {
-                mensagem = "Filme não encontrado."
-            });
+            return NotFound(new ErroResposta("Filme não encontrado."));
 
         if (await ExisteConflito(dto, filme.DuracaoMinutos))
-            return Conflict(new
-            {
-                mensagem = "A sala já possui outra sessão neste intervalo."
-            });
+            return Conflict(new ErroResposta("A sala já possui outra sessão neste intervalo."));
 
         var sessao = new Sessao();
 
@@ -127,12 +120,12 @@ public class SessoesController : ControllerBase
     /// <response code="204">Sessão atualizada.</response>
     /// <response code="400">Dados inválidos.</response>
     /// <response code="404">Sessão ou filme inexistente.</response>
-    /// <response code="409">Horário em conflito com outra sessão na mesma sala.</response>
+    /// <response code="409">Horário em conflito com outra sessão na mesma sala, ou capacidade menor que os lugares já reservados.</response>
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErroResposta), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Atualizar(int id, SessaoDto dto)
     {
         var sessao = await _db.Sessoes.FindAsync(id);
@@ -146,16 +139,18 @@ public class SessoesController : ControllerBase
         var filme = await _db.Filmes.FindAsync(dto.FilmeId);
 
         if (filme is null)
-            return NotFound(new
-            {
-                mensagem = "Filme não encontrado."
-            });
+            return NotFound(new ErroResposta("Filme não encontrado."));
 
         if (await ExisteConflito(dto, filme.DuracaoMinutos, id))
-            return Conflict(new
-            {
-                mensagem = "A sala já possui outra sessão neste intervalo."
-            });
+            return Conflict(new ErroResposta("A sala já possui outra sessão neste intervalo."));
+
+        var reservados = await _db.Reservas
+            .Where(r => r.SessaoId == id && r.Status == StatusReserva.Confirmada)
+            .SumAsync(r => r.QuantidadeLugares);
+
+        if (dto.Capacidade < reservados)
+            return Conflict(new ErroResposta(
+                $"A sessão já tem {reservados} lugar(es) reservado(s); a capacidade não pode ser menor."));
 
         Aplicar(sessao, dto);
 
@@ -167,6 +162,7 @@ public class SessoesController : ControllerBase
     }
 
     /// <summary>Exclui uma sessão pelo Id.</summary>
+    /// <remarks>Atenção: as reservas da sessão também são excluídas.</remarks>
     /// <param name="id">Identificador da sessão.</param>
     /// <response code="204">Sessão excluída.</response>
     /// <response code="404">Sessão não existe.</response>
