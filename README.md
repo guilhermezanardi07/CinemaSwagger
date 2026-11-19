@@ -1,165 +1,39 @@
-# Cinema API
+# CinemaSwagger — API de Cinema
 
-API REST de cinema desenvolvida em **ASP.NET Core (.NET 10)** com **PostgreSQL** e documentação interativa via **Swagger (OpenAPI)**.
-Trabalho final da disciplina **Técnicas Avançadas de Programação**.
+Trabalho final de Técnicas Avançadas de Programação. API REST em ASP.NET Core (.NET 10) com PostgreSQL e documentação Swagger.
 
-## Funcionalidades
+**Integrantes:** Arthur F., Bruno S., Guilherme Z., Rafael D., Matheus B.
 
-- **Filmes:** cadastro, consulta, edição e exclusão; filtro por gênero e situação; colocar/tirar de cartaz.
-- **Sessões:** horários dos filmes nas salas.
-- **Reservas:** reserva de lugares em uma sessão.
-- **Disponibilidade:** lugares livres por sessão.
+## Módulos
+| Módulo | Rota base | O que faz |
+|---|---|---|
+| Filmes | `/api/Filmes` | CRUD + `PATCH /{id}/em-cartaz` (regra de negócio) |
+| Sessões | `/api/Sessoes` | CRUD; impede sobreposição de horário na mesma sala |
+| Reservas | `/api/Reservas` | CRUD + `PATCH /{id}/cancelar` e `/{id}/reativar` (regras de negócio) |
+| Disponibilidade | `/api/Disponibilidade` | Consulta de lugares livres por sessão |
 
-> Relacionamentos: `Filme` 1 → N `Sessao` 1 → N `Reserva`.
+Relações: Filme 1—N Sessão 1—N Reserva. Disponibilidade é calculada a partir de Sessão e Reservas Confirmadas.
 
 ## Requisitos
-
-- [.NET SDK 10](https://dotnet.microsoft.com/download)
-- [PostgreSQL](https://www.postgresql.org/download/) em execução
-- Ferramenta do Entity Framework:
-
-```bash
-dotnet tool install --global dotnet-ef
-```
+- .NET SDK 10
+- PostgreSQL (padrão do projeto: porta 5433)
 
 ## Configuração
-
-1. Clone o repositório:
-
-```bash
-git clone https://github.com/guilhermezanardi07/CinemaSwagger.git
-cd CinemaSwagger/CinemaSwagger
+Ajuste a connection string em `appsettings.json` (`ConnectionStrings:Padrao`):
+```
+Host=localhost;Port=5433;Database=cinema;Username=postgres;Password=123456
 ```
 
-2. Ajuste a conexão com o banco em `appsettings.json` (use o seu host, porta e senha):
-
-```json
-"ConnectionStrings": {
-  "Padrao": "Host=localhost;Port=5432;Database=cinema;Username=postgres;Password=SUA_SENHA"
-}
-```
-
-> O banco `cinema` é criado automaticamente. Não envie sua senha pessoal para o repositório.
-
-## Como executar
-
+## Executando
 ```bash
 dotnet restore
 dotnet run
 ```
+As migrations são aplicadas automaticamente na inicialização (o banco `cinema` é criado e recebe dados de exemplo: 3 filmes, 3 sessões e 2 reservas).
+Abra o Swagger em `http://localhost:5254/swagger`.
 
-Ao iniciar, a aplicação aplica as **migrations** automaticamente, criando as tabelas e inserindo os **dados de exemplo**.
-
-Acesse o Swagger no navegador (a porta aparece no terminal, na linha `Now listening on`):
-
-```
-http://localhost:5254/swagger
-```
-
-## Migrations
-
-As migrations ficam na pasta `Migrations/`. Para criar uma nova após alterar os models:
-
-```bash
-dotnet ef migrations add NomeDaMigration
-dotnet ef database update
-```
-
-## Endpoints
-
-### Filmes (`/api/Filmes`)
-
-| Método | Rota | Descrição | Respostas |
-|---|---|---|---|
-| GET | `/api/Filmes` | Lista filmes (filtros `genero` e `emCartaz`) | 200 |
-| GET | `/api/Filmes/{id}` | Busca filme por Id | 200, 404 |
-| POST | `/api/Filmes` | Cadastra filme | 201, 400 |
-| PUT | `/api/Filmes/{id}` | Atualiza filme | 204, 400, 404 |
-| DELETE | `/api/Filmes/{id}` | Exclui filme | 204, 404 |
-| PATCH | `/api/Filmes/{id}/em-cartaz?valor=true` | **Regra de negócio:** coloca ou tira de cartaz | 200, 404 |
-
-### Reservas (`/api/Reservas`)
-
-| Método | Rota | Descrição | Respostas |
-|---|---|---|---|
-| GET | `/api/Reservas` | Lista reservas (filtros `sessaoId`, `email` e `status`) | 200, 400 |
-| GET | `/api/Reservas/{id}` | Busca reserva por Id | 200, 404 |
-| POST | `/api/Reservas` | Reserva lugares em uma sessão | 201, 400, 404, 409 |
-| PUT | `/api/Reservas/{id}` | Atualiza reserva (nome, e-mail, quantidade ou sessão) | 204, 400, 404, 409 |
-| DELETE | `/api/Reservas/{id}` | Exclui reserva definitivamente | 204, 404 |
-| PATCH | `/api/Reservas/{id}/cancelar` | **Regra de negócio:** cancela a reserva e libera os lugares | 200, 404, 409 |
-| PATCH | `/api/Reservas/{id}/reativar` | **Regra de negócio:** reativa uma reserva cancelada, se ainda houver lugares | 200, 404, 409 |
-
-Regras aplicadas ao reservar (POST) e ao editar (PUT):
-
-- A sessão precisa existir (404).
-- A sessão não pode já ter começado (409).
-- A quantidade (1 a 10) não pode passar dos lugares livres: capacidade da sessão menos as reservas **confirmadas** (409).
-- O `valorTotal` é calculado pela API (preço da sessão × quantidade).
-- Excluir uma sessão remove também as reservas dela.
-
-`POST /api/Reservas`
-
-```json
-{
-  "sessaoId": 1,
-  "nomeCliente": "Ana Souza",
-  "email": "ana.souza@email.com",
-  "quantidadeLugares": 2
-}
-```
-
-### Sessões e Disponibilidade
-
-Documentados no Swagger conforme forem adicionados pelo grupo.
-
-## Exemplo de requisição
-
-`POST /api/Filmes`
-
-```json
-{
-  "titulo": "Interestelar",
-  "genero": "Ficção científica",
-  "duracaoMinutos": 169,
-  "classificacao": "12 anos",
-  "sinopse": "Exploradores viajam por um buraco de minhoca.",
-  "dataLancamento": "2014-11-06",
-  "emCartaz": true
-}
-```
-
-## Validações e códigos HTTP
-
-| Código | Significado |
-|---|---|
-| 200 | Sucesso (consulta ou ação) |
-| 201 | Recurso criado |
-| 204 | Sucesso sem conteúdo (atualização/exclusão) |
-| 400 | Dados inválidos (ex.: título vazio, duração fora de 1 a 600, quantidade de lugares 0) |
-| 404 | Recurso não encontrado |
-| 409 | Conflito com uma regra de negócio (ex.: sessão esgotada, horário de sala ocupado) |
-
-## Dados de exemplo
-
-Ao subir a API, o banco já vem com filmes cadastrados (Interestelar, Divertida Mente e O Poderoso Chefão), 3 sessões (Ids 1, 2 e 3) e 2 reservas (Ids 1 e 2) para testes e para a apresentação.
-
-## Estrutura do projeto
-
-```
-CinemaSwagger/
-├── Controllers/    # Endpoints da API
-├── Data/           # AppDbContext e seed
-├── Models/         # Entidades e DTOs
-├── Migrations/     # Histórico do banco
-├── Program.cs      # Configuração (EF Core, Swagger)
-└── appsettings.json
-```
-
-## Tecnologias
-
-ASP.NET Core · Entity Framework Core · PostgreSQL (Npgsql) · Swashbuckle (Swagger UI)
-
-## Equipe
-
-Grupo: Arthur Lima, Bruno Seleguin, Guilherme Zanardi, Matheus Bernardes, Rafael Dias
+## Regras principais
+- Reserva: 1 a 10 lugares; só em sessão que ainda não começou e com lugares livres (409 caso contrário).
+- Filme com sessões não pode ser excluído (409). Excluir uma sessão exclui as reservas dela.
+- Datas em UTC com `Z` (ex.: `2026-12-15T22:30:00Z`).
+- Códigos: 200, 201, 204, 400 (validação), 404 (não existe), 409 (regra de negócio).
