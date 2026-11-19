@@ -21,7 +21,7 @@ Relações: Filme 1—N Sessão 1—N Reserva. Disponibilidade é calculada a pa
 ## Configuração
 Ajuste a connection string em `appsettings.json` (`ConnectionStrings:Padrao`):
 ```
-Host=localhost;Port=5433;Database=cinema;Username=postgres;Password=123456
+Host=localhost;Port=SUA_PORTA;Database=cinema;Username=SEU_USUARIO;Password=SUA_SENHA
 ```
 
 ## Executando
