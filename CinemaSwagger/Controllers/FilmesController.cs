@@ -57,6 +57,7 @@ public class FilmesController : ControllerBase
 
     /// <summary>Atualiza todos os dados de um filme.</summary>
     /// <param name="id">Identificador do filme.</param>
+    /// <param name="dto">Novos dados do filme.</param>
     /// <response code="204">Atualizado com sucesso.</response>
     /// <response code="400">Dados inválidos.</response>
     /// <response code="404">Filme não existe.</response>

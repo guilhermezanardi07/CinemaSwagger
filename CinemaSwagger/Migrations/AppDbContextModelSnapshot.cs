@@ -22,18 +22,6 @@ namespace CinemaSwagger.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("CinemaSwagger.Models.Reserva", b =>
-                {
-                    b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("integer");
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-                    b.Property<string>("Assento").IsRequired().HasMaxLength(5).HasColumnType("character varying(5)");
-                    b.Property<DateTime>("CriadaEm").HasColumnType("timestamp with time zone");
-                    b.Property<int>("SessaoId").HasColumnType("integer");
-                    b.HasKey("Id");
-                    b.HasIndex("SessaoId", "Assento").IsUnique();
-                    b.ToTable("Reservas");
-                });
-
             modelBuilder.Entity("CinemaSwagger.Models.Filme", b =>
                 {
                     b.Property<int>("Id")
@@ -106,6 +94,74 @@ namespace CinemaSwagger.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CinemaSwagger.Models.Reserva", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.HasIdentityOptions(b.Property<int>("Id"), 100L, null, null, null, null, null);
+
+                    b.Property<DateTime>("DataReserva")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("NomeCliente")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("QuantidadeLugares")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SessaoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("ValorTotal")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessaoId");
+
+                    b.ToTable("Reservas");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            DataReserva = new DateTime(2026, 11, 10, 14, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "ana.souza@email.com",
+                            NomeCliente = "Ana Souza",
+                            QuantidadeLugares = 2,
+                            SessaoId = 1,
+                            Status = "Confirmada",
+                            ValorTotal = 50.00m
+                        },
+                        new
+                        {
+                            Id = 2,
+                            DataReserva = new DateTime(2026, 11, 11, 10, 30, 0, 0, DateTimeKind.Utc),
+                            Email = "carlos.lima@email.com",
+                            NomeCliente = "Carlos Lima",
+                            QuantidadeLugares = 4,
+                            SessaoId = 2,
+                            Status = "Confirmada",
+                            ValorTotal = 80.00m
+                        });
+                });
+
             modelBuilder.Entity("CinemaSwagger.Models.Sessao", b =>
                 {
                     b.Property<int>("Id")
@@ -173,7 +229,11 @@ namespace CinemaSwagger.Migrations
             modelBuilder.Entity("CinemaSwagger.Models.Reserva", b =>
                 {
                     b.HasOne("CinemaSwagger.Models.Sessao", "Sessao")
-                        .WithMany().HasForeignKey("SessaoId").OnDelete(DeleteBehavior.Cascade).IsRequired();
+                        .WithMany()
+                        .HasForeignKey("SessaoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Sessao");
                 });
 
