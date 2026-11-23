@@ -1,0 +1,37 @@
+@model CatalogoViewModel
+@{
+    ViewData["Title"] = "Filmes em cartaz";
+}
+
+<section class="container pagina">
+    <header class="pagina-cabecalho">
+        <span class="kicker">Catálogo</span>
+        <h1>Filmes em cartaz</h1>
+    </header>
+
+    @if (Model.Erro is not null)
+    {
+        <div class="aviso aviso-erro" role="alert">@Model.Erro</div>
+    }
+
+    <nav class="chips" aria-label="Filtrar por categoria">
+        <a class="chip @(string.IsNullOrWhiteSpace(Model.Genero) ? "chip-ativo" : "")" asp-action="Index">Todos</a>
+        @foreach (var g in Model.TodosGeneros)
+        {
+            var ativo = Texto.Normalizar(g) == Texto.Normalizar(Model.Genero);
+            <a class="chip @(ativo ? "chip-ativo" : "")" asp-action="Index" asp-route-genero="@g">@g</a>
+        }
+    </nav>
+
+    @if (Model.Filmes.Count == 0 && Model.Erro is null)
+    {
+        <p class="vazio">Nenhum filme encontrado nesta categoria.</p>
+    }
+
+    <div class="fila">
+        @foreach (var filme in Model.Filmes)
+        {
+            <partial name="_FilmeCard" model="filme" />
+        }
+    </div>
+</section>

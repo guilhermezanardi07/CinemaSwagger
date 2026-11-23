@@ -1,0 +1,125 @@
+@model HomeViewModel
+@{
+    ViewData["Title"] = "Início";
+}
+
+@if (Model.Erro is not null)
+{
+    <div class="container">
+        <div class="aviso aviso-erro" role="alert">@Model.Erro</div>
+    </div>
+}
+
+@* ============ Carrossel de filmes em destaque ============ *@
+@if (Model.Destaques.Count > 0)
+{
+    <section class="container secao-destaques" aria-label="Filmes em destaque">
+        <div id="carrosselDestaques" class="carousel slide" data-bs-ride="carousel" data-bs-interval="6000">
+            <div class="carousel-indicators">
+                @for (var i = 0; i < Model.Destaques.Count; i++)
+                {
+                    <button type="button" data-bs-target="#carrosselDestaques" data-bs-slide-to="@i"
+                            class="@(i == 0 ? "active" : "")" aria-current="@(i == 0 ? "true" : "false")"
+                            aria-label="Destaque @(i + 1)"></button>
+                }
+            </div>
+            <div class="carousel-inner">
+                @for (var i = 0; i < Model.Destaques.Count; i++)
+                {
+                    var f = Model.Destaques[i];
+                    <div class="carousel-item @(i == 0 ? "active" : "")">
+                        <div class="destaque @Visual.Tom(f.Genero)">
+                            <div class="destaque-texto">
+                                <span class="destaque-etiqueta">Em destaque</span>
+                                <h2>@f.Titulo</h2>
+                                <p class="destaque-meta">@f.Genero · @f.DuracaoMinutos min · @f.Classificacao</p>
+                                <p class="destaque-sinopse">@(string.IsNullOrWhiteSpace(f.Sinopse) ? "Sinopse em breve." : f.Sinopse)</p>
+                                <div class="destaque-acoes">
+                                    <a class="btn-reservar" asp-controller="Reservas" asp-action="Nova" asp-route-filmeId="@f.Id">Reservar agora</a>
+                                    <a class="btn-saiba" asp-controller="Filmes" asp-action="Detalhes" asp-route-id="@f.Id">Saiba mais</a>
+                                </div>
+                            </div>
+                            <div class="destaque-marca" aria-hidden="true">@f.Titulo</div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carrosselDestaques" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Filme anterior</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carrosselDestaques" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Próximo filme</span>
+            </button>
+        </div>
+    </section>
+}
+
+@* ============ Frase de apresentação + imagem interativa ============ *@
+<section class="container manifesto">
+    <div class="manifesto-texto">
+        <span class="kicker">Antes de apagar a luz</span>
+        <h2>O melhor lugar da sala já tem o seu nome.</h2>
+        <p>
+            Chega de fila, de sessão lotada e de descobrir tarde demais que não sobrou cadeira.
+            Aqui você vê o que está em cartaz, confere quantos lugares ainda restam em cada sessão,
+            em tempo real, e garante a sua reserva em poucos cliques. O resto é só deixar a história começar.
+        </p>
+    </div>
+
+    <div class="imagem-interativa" tabindex="0" role="group" aria-label="Ilustração de uma sala de cinema. Passe o mouse ou foque para ler uma frase.">
+        <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Sala de cinema com o feixe do projetor apontado para a tela">
+            <defs>
+                <linearGradient id="svgFundo" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#162f5e" />
+                    <stop offset="1" stop-color="#14161a" />
+                </linearGradient>
+                <linearGradient id="svgFeixe" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0" stop-color="#b8c7e0" stop-opacity="0.05" />
+                    <stop offset="1" stop-color="#b8c7e0" stop-opacity="0.45" />
+                </linearGradient>
+                <pattern id="svgPoltronas" width="44" height="38" patternUnits="userSpaceOnUse">
+                    <rect x="6" y="10" width="32" height="24" rx="8" fill="#36404e" />
+                    <rect x="10" y="6" width="24" height="10" rx="5" fill="#4a586b" />
+                </pattern>
+            </defs>
+            <rect width="800" height="450" fill="url(#svgFundo)" />
+            <polygon points="400,300 140,40 660,40" fill="url(#svgFeixe)" />
+            <rect x="140" y="28" width="520" height="150" rx="6" fill="#0f2347" stroke="#708090" stroke-width="3" />
+            <path d="M330 80l0 46 40-23z" fill="#d7263d" transform="translate(40 -2)" />
+            <rect x="0" y="228" width="800" height="222" fill="url(#svgPoltronas)" />
+            <rect x="402" y="310" width="32" height="24" rx="8" fill="#d7263d" />
+            <rect x="406" y="306" width="24" height="10" rx="5" fill="#ef4a5f" />
+        </svg>
+        <div class="imagem-legenda">
+            <p>Antes do primeiro trailer, o seu lugar já estava guardado.</p>
+        </div>
+    </div>
+</section>
+
+@* ============ Filmes por categoria ============ *@
+<section class="container generos" aria-label="Filmes por categoria">
+    <h2 class="titulo-secao">Em cartaz agora</h2>
+
+    @if (Model.Generos.Count == 0 && Model.Erro is null)
+    {
+        <p class="vazio">Nenhum filme em cartaz no momento. Cadastre um em Administração › Gerenciar filmes.</p>
+    }
+
+    @foreach (var grupo in Model.Generos)
+    {
+        <div class="genero-bloco">
+            <h3 class="genero-titulo">
+                <span>@grupo.Nome</span>
+                <a class="genero-ver" asp-controller="Filmes" asp-action="Index" asp-route-genero="@grupo.Nome">ver categoria</a>
+            </h3>
+            <div class="fila">
+                @foreach (var filme in grupo.Filmes)
+                {
+                    <partial name="_FilmeCard" model="filme" />
+                }
+            </div>
+        </div>
+    }
+</section>

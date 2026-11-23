@@ -1,0 +1,68 @@
+@model ReservasViewModel
+@{
+    ViewData["Title"] = "Minhas reservas";
+}
+
+<section class="container pagina">
+    <header class="pagina-cabecalho">
+        <span class="kicker">Suas reservas</span>
+        <h1>Minhas reservas</h1>
+        <p class="pagina-sub">Digite o e-mail usado na reserva para consultar, cancelar ou reativar.</p>
+    </header>
+
+    <form class="filtro filtro-email" method="get" asp-action="Index">
+        <label for="email">E-mail</label>
+        <input id="email" name="email" type="email" value="@Model.Email" placeholder="voce@email.com" autocomplete="email" required />
+        <button type="submit" class="btn-reservar">Consultar</button>
+    </form>
+
+    @if (Model.Erro is not null)
+    {
+        <div class="aviso aviso-erro" role="alert">@Model.Erro</div>
+    }
+    else if (Model.Buscou && Model.Reservas.Count == 0)
+    {
+        <p class="vazio">Nenhuma reserva encontrada para este e-mail. <a asp-action="Nova">Faça uma reserva</a>.</p>
+    }
+
+    <div class="ingressos">
+        @foreach (var r in Model.Reservas)
+        {
+            var cancelada = r.Status == "Cancelada";
+            <article class="ingresso @(cancelada ? "ingresso-off" : "")">
+                <div class="ingresso-quando">
+                    <strong>#@r.Id</strong>
+                    <span>@Fuso.Formatar(r.DataHoraSessao)</span>
+                </div>
+                <div class="ingresso-info">
+                    <h3>@r.TituloFilme</h3>
+                    <p>@r.Sala · @r.QuantidadeLugares lugar(es) · @r.ValorTotal.ToString("C") · @r.NomeCliente</p>
+                    <p>
+                        @if (cancelada) { <b class="selo selo-erro">Cancelada</b> }
+                        else { <b class="selo selo-ok">Confirmada</b> }
+                        <small> reservada em @Fuso.FormatarCompleto(r.DataReserva)</small>
+                    </p>
+                </div>
+                <div class="ingresso-acao acoes-coluna">
+                    @if (cancelada)
+                    {
+                        <form asp-action="Reativar" asp-route-id="@r.Id" asp-route-email="@Model.Email" method="post">
+                            <button type="submit" class="btn-saiba">Reativar</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-action="Cancelar" asp-route-id="@r.Id" asp-route-email="@Model.Email" method="post"
+                              data-confirmar="Cancelar a reserva #@(r.Id)? Os lugares serão liberados.">
+                            <button type="submit" class="btn-reservar">Cancelar reserva</button>
+                        </form>
+                    }
+                    <form asp-action="Excluir" asp-route-id="@r.Id" asp-route-email="@Model.Email" method="post"
+                          data-confirmar="Excluir definitivamente a reserva #@(r.Id)?">
+                        <button type="submit" class="btn-mini btn-mini-perigo">Excluir</button>
+                    </form>
+                </div>
+            </article>
+        }
+    </div>
+</section>

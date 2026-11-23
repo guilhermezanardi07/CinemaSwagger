@@ -1,0 +1,94 @@
+@model ReservaFormViewModel
+@{
+    ViewData["Title"] = "Reservar";
+}
+
+<section class="container pagina pagina-estreita">
+    <header class="pagina-cabecalho">
+        <span class="kicker">Reserva</span>
+        <h1>@(Model.Filme is null ? "Reservar lugares" : "Reservar: " + Model.Filme.Titulo)</h1>
+        <p class="pagina-sub">Escolha a sessão e quantos lugares você quer. O valor total é calculado pela API.</p>
+    </header>
+
+    @if (Model.Sessoes.Count == 0)
+    {
+        <p class="vazio">
+            Não há sessões futuras com lugares livres@(Model.Filme is null ? "" : " para este filme").
+            Veja a <a asp-controller="Sessoes" asp-action="Index">programação completa</a>.
+        </p>
+    }
+    else
+    {
+        <form class="formulario" method="post" asp-action="Nova" novalidate>
+            <div asp-validation-summary="ModelOnly" class="aviso aviso-erro" role="alert"></div>
+            <input type="hidden" asp-for="FilmeId" />
+
+            <div class="campo">
+                <label asp-for="SessaoId"></label>
+                <select asp-for="SessaoId" id="SessaoId">
+                    <option value="0" data-preco="0" data-livres="0">Selecione uma sessão…</option>
+                    @foreach (var s in Model.Sessoes)
+                    {
+                        var rotulo = (Model.FilmeId.HasValue ? "" : s.TituloFilme + " · ")
+                            + Fuso.Formatar(s.DataHora) + " · " + s.Sala + " · " + s.Preco.ToString("C")
+                            + " · " + s.LugaresLivres + " livres";
+                        <option value="@s.SessaoId" data-preco="@s.Preco.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                data-livres="@s.LugaresLivres" selected="@(Model.SessaoId == s.SessaoId)">@rotulo</option>
+                    }
+                </select>
+                <span asp-validation-for="SessaoId" class="erro-campo"></span>
+            </div>
+
+            <div class="campo">
+                <label asp-for="NomeCliente"></label>
+                <input asp-for="NomeCliente" maxlength="100" autocomplete="name" />
+                <span asp-validation-for="NomeCliente" class="erro-campo"></span>
+            </div>
+
+            <div class="campo-linha">
+                <div class="campo">
+                    <label asp-for="Email"></label>
+                    <input asp-for="Email" type="email" maxlength="150" autocomplete="email" />
+                    <span asp-validation-for="Email" class="erro-campo"></span>
+                </div>
+                <div class="campo">
+                    <label asp-for="QuantidadeLugares"></label>
+                    <input asp-for="QuantidadeLugares" type="number" min="1" max="10" />
+                    <span asp-validation-for="QuantidadeLugares" class="erro-campo"></span>
+                </div>
+            </div>
+
+            <p class="resumo-total" id="resumo-total" aria-live="polite">Escolha uma sessão para ver o total.</p>
+
+            <div class="formulario-acoes">
+                <button type="submit" class="btn-reservar btn-grande">Confirmar reserva</button>
+                <a class="btn-saiba" asp-controller="Home" asp-action="Index">Cancelar</a>
+            </div>
+        </form>
+    }
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var sessao = document.getElementById('SessaoId');
+            var qtd = document.getElementById('QuantidadeLugares');
+            var resumo = document.getElementById('resumo-total');
+            if (!sessao || !qtd || !resumo) return;
+
+            function atualizar() {
+                var opt = sessao.options[sessao.selectedIndex];
+                var preco = parseFloat(opt.getAttribute('data-preco') || '0');
+                var livres = parseInt(opt.getAttribute('data-livres') || '0', 10);
+                var n = parseInt(qtd.value || '0', 10);
+                if (!preco || !n) { resumo.textContent = 'Escolha uma sessão para ver o total.'; return; }
+                var total = (preco * n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                resumo.textContent = 'Total estimado: ' + total + ' (' + livres + ' lugares livres nesta sessão)';
+            }
+            sessao.addEventListener('change', atualizar);
+            qtd.addEventListener('input', atualizar);
+            atualizar();
+        })();
+    </script>
+}

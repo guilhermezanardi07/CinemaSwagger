@@ -1,0 +1,19 @@
+@model FilmeResposta
+@{
+    var tom = Visual.Tom(Model.Genero);
+}
+<article class="cartao">
+    <a class="poster @tom" asp-controller="Filmes" asp-action="Detalhes" asp-route-id="@Model.Id" tabindex="-1" aria-hidden="true">
+        <span class="poster-classif">@Model.Classificacao</span>
+        <span class="poster-genero">@Model.Genero</span>
+        <span class="poster-titulo">@Model.Titulo</span>
+    </a>
+    <div class="cartao-corpo">
+        <h3 class="cartao-titulo">@Model.Titulo</h3>
+        <p class="cartao-meta">@Model.Genero · @Model.DuracaoMinutos min</p>
+        <div class="cartao-acoes">
+            <a class="btn-saiba" asp-controller="Filmes" asp-action="Detalhes" asp-route-id="@Model.Id">Saiba mais</a>
+            <a class="btn-reservar" asp-controller="Reservas" asp-action="Nova" asp-route-filmeId="@Model.Id">Reservar</a>
+        </div>
+    </div>
+</article>

@@ -1,0 +1,56 @@
+@model SessoesAdminViewModel
+@{
+    ViewData["Title"] = "Gerenciar sessões";
+}
+
+<section class="container pagina">
+    <header class="pagina-cabecalho pagina-cabecalho-linha">
+        <div>
+            <span class="kicker">Administração</span>
+            <h1>Gerenciar sessões</h1>
+        </div>
+        <a class="btn-reservar" asp-action="Criar">+ Nova sessão</a>
+    </header>
+
+    @if (Model.Erro is not null)
+    {
+        <div class="aviso aviso-erro" role="alert">@Model.Erro</div>
+    }
+
+    @if (Model.Sessoes.Count == 0 && Model.Erro is null)
+    {
+        <p class="vazio">Nenhuma sessão cadastrada.</p>
+    }
+    else if (Model.Sessoes.Count > 0)
+    {
+        <div class="tabela-caixa">
+            <table class="tabela">
+                <thead>
+                    <tr>
+                        <th>Id</th><th>Filme</th><th>Sala</th><th>Data e horário</th><th>Preço</th><th>Lugares</th><th class="col-acoes">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.Sessoes)
+                    {
+                        <tr>
+                            <td>@s.Id</td>
+                            <td>@s.TituloFilme</td>
+                            <td>@s.Sala</td>
+                            <td>@Fuso.FormatarCompleto(s.DataHora)</td>
+                            <td>@s.Preco.ToString("C")</td>
+                            <td>@s.Capacidade</td>
+                            <td class="col-acoes">
+                                <a class="btn-mini" asp-action="Editar" asp-route-id="@s.Id">Editar</a>
+                                <form asp-action="Excluir" asp-route-id="@s.Id" method="post" class="form-inline"
+                                      data-confirmar="Excluir a sessão #@(s.Id)? As reservas dela também serão apagadas.">
+                                    <button type="submit" class="btn-mini btn-mini-perigo">Excluir</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

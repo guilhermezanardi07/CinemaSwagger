@@ -1,0 +1,78 @@
+@model FilmeDto
+@{
+    var id = ViewData["Id"] as int?;
+    var editando = id.HasValue;
+    ViewData["Title"] = editando ? "Editar filme" : "Novo filme";
+}
+
+<section class="container pagina pagina-estreita">
+    <header class="pagina-cabecalho">
+        <span class="kicker">Administração</span>
+        <h1>@ViewData["Title"]</h1>
+    </header>
+
+    <form class="formulario" method="post" asp-action="@(editando ? "Editar" : "Criar")" asp-route-id="@id" novalidate>
+        <div asp-validation-summary="ModelOnly" class="aviso aviso-erro" role="alert"></div>
+
+        <div class="campo">
+            <label asp-for="Titulo"></label>
+            <input asp-for="Titulo" maxlength="100" />
+            <span asp-validation-for="Titulo" class="erro-campo"></span>
+        </div>
+
+        <div class="campo-linha">
+            <div class="campo">
+                <label asp-for="Genero"></label>
+                <input asp-for="Genero" maxlength="50" list="generos-sugeridos" />
+                <datalist id="generos-sugeridos">
+                    <option value="Ação"></option><option value="Animação"></option><option value="Aventura"></option>
+                    <option value="Comédia"></option><option value="Drama"></option><option value="Ficção científica"></option>
+                    <option value="Romance"></option><option value="Suspense"></option><option value="Terror"></option>
+                </datalist>
+                <span asp-validation-for="Genero" class="erro-campo"></span>
+            </div>
+            <div class="campo">
+                <label asp-for="Classificacao"></label>
+                <input asp-for="Classificacao" maxlength="20" list="classificacoes" />
+                <datalist id="classificacoes">
+                    <option value="Livre"></option><option value="10 anos"></option><option value="12 anos"></option>
+                    <option value="14 anos"></option><option value="16 anos"></option><option value="18 anos"></option>
+                </datalist>
+                <span asp-validation-for="Classificacao" class="erro-campo"></span>
+            </div>
+        </div>
+
+        <div class="campo-linha">
+            <div class="campo">
+                <label asp-for="DuracaoMinutos"></label>
+                <input asp-for="DuracaoMinutos" type="number" min="1" max="600" />
+                <span asp-validation-for="DuracaoMinutos" class="erro-campo"></span>
+            </div>
+            <div class="campo">
+                <label asp-for="DataLancamento"></label>
+                <input id="DataLancamento" name="DataLancamento" type="date" value="@Model.DataLancamento.ToString("yyyy-MM-dd")" />
+                <span asp-validation-for="DataLancamento" class="erro-campo"></span>
+            </div>
+        </div>
+
+        <div class="campo">
+            <label asp-for="Sinopse"></label>
+            <textarea asp-for="Sinopse" rows="4" maxlength="500"></textarea>
+            <span asp-validation-for="Sinopse" class="erro-campo"></span>
+        </div>
+
+        <div class="campo campo-check">
+            <input asp-for="EmCartaz" />
+            <label asp-for="EmCartaz"></label>
+        </div>
+
+        <div class="formulario-acoes">
+            <button type="submit" class="btn-reservar">@(editando ? "Salvar alterações" : "Cadastrar filme")</button>
+            <a class="btn-saiba" asp-action="Gerenciar">Cancelar</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

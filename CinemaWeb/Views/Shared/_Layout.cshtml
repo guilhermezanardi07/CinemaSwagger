@@ -1,0 +1,122 @@
+@{
+    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var acao = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var emAdmin = acao == "Gerenciar" || (acao is "Criar" or "Editar" && ctrl is "Filmes" or "Sessoes");
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · Ardósia Cinemas</title>
+
+    @* Aplica antes de pintar a tela o tamanho de texto e o contraste que a pessoa escolheu *@
+    <script>
+        (function () {
+            try {
+                var d = document.documentElement;
+                var t = localStorage.getItem('ardosia.tamanho');
+                if (t) d.style.fontSize = t + '%';
+                if (localStorage.getItem('ardosia.contraste') === '1') d.classList.add('alto-contraste');
+            } catch (e) { }
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+
+    <header class="topo">
+        <div class="container topo-linha">
+            @* Nome do site: em qualquer tela, leva de volta ao início *@
+            <a class="marca" asp-controller="Home" asp-action="Index" aria-label="Ardósia Cinemas – voltar para a página inicial">
+                <svg class="marca-icone" viewBox="0 0 40 40" aria-hidden="true">
+                    <rect x="2" y="6" width="36" height="28" rx="5" fill="none" stroke="currentColor" stroke-width="2.5" />
+                    <path d="M16 14.5v11l9.5-5.5z" fill="#d7263d" />
+                    <path d="M2 12h36M2 28h36" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3" />
+                </svg>
+                <span class="marca-textos">
+                    <span class="marca-nome">ARDÓSIA</span>
+                    <span class="marca-sub">cinemas</span>
+                </span>
+            </a>
+
+            <form class="busca" role="search" asp-controller="Filmes" asp-action="Buscar" method="get" autocomplete="off">
+                <label for="busca-termo" class="visually-hidden">Buscar filmes pelo nome ou pela categoria</label>
+                <input id="busca-termo" name="termo" type="search" maxlength="60"
+                       placeholder="Busque um filme ou uma categoria…"
+                       data-url-sugestoes="@Url.Action("Sugestoes", "Filmes")"
+                       aria-controls="busca-sugestoes" aria-expanded="false" />
+                <button type="submit" aria-label="Buscar">
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /></svg>
+                </button>
+                <ul id="busca-sugestoes" class="sugestoes" role="listbox" aria-label="Sugestões de busca" hidden></ul>
+            </form>
+
+            <div class="acess" role="group" aria-label="Opções de acessibilidade">
+                <button type="button" data-acao="diminuir" aria-label="Diminuir o tamanho do texto" title="Diminuir texto">A−</button>
+                <button type="button" data-acao="resetar" aria-label="Voltar o texto ao tamanho normal" title="Tamanho normal">A</button>
+                <button type="button" data-acao="aumentar" aria-label="Aumentar o tamanho do texto" title="Aumentar texto">A+</button>
+                <button type="button" data-acao="contraste" class="acess-contraste" aria-pressed="false" title="Alto contraste">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" /><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" /></svg>
+                    <span>Contraste</span>
+                </button>
+            </div>
+        </div>
+
+        <nav class="menu" aria-label="Menu principal">
+            <div class="container">
+                <ul>
+                    <li><a class="@(ctrl == "Home" ? "ativo" : "")" asp-controller="Home" asp-action="Index">Início</a></li>
+                    <li><a class="@(ctrl == "Filmes" && !emAdmin && acao != "Buscar" ? "ativo" : "")" asp-controller="Filmes" asp-action="Index">Filmes em cartaz</a></li>
+                    <li><a class="@(ctrl == "Sessoes" && !emAdmin ? "ativo" : "")" asp-controller="Sessoes" asp-action="Index">Sessões</a></li>
+                    <li><a class="@(ctrl == "Reservas" && acao == "Nova" ? "ativo" : "")" asp-controller="Reservas" asp-action="Nova">Reservar</a></li>
+                    <li><a class="@(ctrl == "Reservas" && acao != "Nova" ? "ativo" : "")" asp-controller="Reservas" asp-action="Index">Minhas reservas</a></li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle @(emAdmin ? "ativo" : "")" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Administração</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" asp-controller="Filmes" asp-action="Gerenciar">Gerenciar filmes</a></li>
+                            <li><a class="dropdown-item" asp-controller="Sessoes" asp-action="Gerenciar">Gerenciar sessões</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        <div class="fita" aria-hidden="true"></div>
+    </header>
+
+    <main id="conteudo" tabindex="-1">
+        <div class="container">
+            @if (TempData["Sucesso"] is string sucesso)
+            {
+                <div class="aviso aviso-ok" role="status">@sucesso</div>
+            }
+            @if (TempData["Erro"] is string erro)
+            {
+                <div class="aviso aviso-erro" role="alert">@erro</div>
+            }
+        </div>
+        @RenderBody()
+    </main>
+
+    <footer class="rodape">
+        <div class="container rodape-linha">
+            <div>
+                <strong class="rodape-marca">ARDÓSIA</strong> <span>cinemas</span>
+                <p>Trabalho final de Técnicas Avançadas de Programação · consome a API CinemaSwagger.</p>
+            </div>
+            <p class="rodape-equipe">Arthur Lima · Bruno Seleguin · Guilherme Zanardi · Matheus Bernardes · Rafael Dias</p>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

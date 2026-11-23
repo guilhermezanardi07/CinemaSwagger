@@ -1,0 +1,60 @@
+@model FilmeDetalhesViewModel
+@{
+    var f = Model.Filme;
+    ViewData["Title"] = f.Titulo;
+}
+
+<section class="container pagina">
+    <p class="migalha"><a asp-controller="Home" asp-action="Index">Início</a> › <a asp-action="Index">Filmes em cartaz</a> › @f.Titulo</p>
+
+    <div class="detalhe">
+        <div class="poster poster-grande @Visual.Tom(f.Genero)" aria-hidden="true">
+            <span class="poster-classif">@f.Classificacao</span>
+            <span class="poster-genero">@f.Genero</span>
+            <span class="poster-titulo">@f.Titulo</span>
+        </div>
+
+        <div class="detalhe-info">
+            <span class="kicker">@f.Genero</span>
+            <h1>@f.Titulo</h1>
+            <ul class="ficha">
+                <li><span>Duração</span> @f.DuracaoMinutos min</li>
+                <li><span>Classificação</span> @f.Classificacao</li>
+                <li><span>Lançamento</span> @f.DataLancamento.ToString("dd/MM/yyyy")</li>
+                <li>
+                    <span>Situação</span>
+                    @if (f.EmCartaz)
+                    {
+                        <b class="selo selo-ok">Em cartaz</b>
+                    }
+                    else
+                    {
+                        <b class="selo selo-off">Fora de cartaz</b>
+                    }
+                </li>
+            </ul>
+            <p class="detalhe-sinopse">@(string.IsNullOrWhiteSpace(f.Sinopse) ? "Este filme ainda não tem sinopse cadastrada." : f.Sinopse)</p>
+            <a class="btn-reservar btn-grande" asp-controller="Reservas" asp-action="Nova" asp-route-filmeId="@f.Id">Reservar ingressos</a>
+        </div>
+    </div>
+
+    <h2 class="titulo-secao" id="sessoes">Próximas sessões</h2>
+
+    @if (Model.ErroSessoes is not null)
+    {
+        <div class="aviso aviso-erro" role="alert">@Model.ErroSessoes</div>
+    }
+    else if (Model.Sessoes.Count == 0)
+    {
+        <p class="vazio">Ainda não há sessões futuras para este filme.</p>
+    }
+    else
+    {
+        <div class="ingressos">
+            @foreach (var s in Model.Sessoes)
+            {
+                <partial name="_Ingresso" model="s" />
+            }
+        </div>
+    }
+</section>

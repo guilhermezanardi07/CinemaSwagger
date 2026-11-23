@@ -1,0 +1,34 @@
+@model DisponibilidadeResposta
+@{
+    var percentual = Model.Capacidade == 0 ? 0 : (int)Math.Round(100.0 * Model.LugaresLivres / Model.Capacidade);
+    var baixo = !Model.Esgotada && percentual <= 20;
+    var indisponivel = Model.Esgotada || Model.JaComecou;
+}
+<article class="ingresso @(indisponivel ? "ingresso-off" : "")">
+    <div class="ingresso-quando">
+        <strong>@Fuso.ParaLocal(Model.DataHora).ToString("HH:mm")</strong>
+        <span>@Fuso.ParaLocal(Model.DataHora).ToString("ddd, dd/MM")</span>
+    </div>
+    <div class="ingresso-info">
+        <h3>@Model.TituloFilme</h3>
+        <p>@Model.Sala · @Model.Preco.ToString("C") por ingresso</p>
+        <div class="lugares" role="img" aria-label="@Model.LugaresLivres de @Model.Capacidade lugares livres">
+            <div class="lugares-barra"><span class="@(baixo ? "lugares-baixo" : "")" style="width:@(percentual)%"></span></div>
+            <small>@Model.LugaresLivres de @Model.Capacidade lugares livres</small>
+        </div>
+    </div>
+    <div class="ingresso-acao">
+        @if (Model.JaComecou)
+        {
+            <b class="selo selo-off">Já começou</b>
+        }
+        else if (Model.Esgotada)
+        {
+            <b class="selo selo-erro">Esgotada</b>
+        }
+        else
+        {
+            <a class="btn-reservar" asp-controller="Reservas" asp-action="Nova" asp-route-filmeId="@Model.FilmeId" asp-route-sessaoId="@Model.SessaoId">Reservar</a>
+        }
+    </div>
+</article>

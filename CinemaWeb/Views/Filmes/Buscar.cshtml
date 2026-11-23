@@ -1,0 +1,37 @@
+@model BuscaViewModel
+@{
+    ViewData["Title"] = "Busca";
+}
+
+<section class="container pagina">
+    <header class="pagina-cabecalho">
+        <span class="kicker">Resultado da busca</span>
+        @if (string.IsNullOrWhiteSpace(Model.Termo))
+        {
+            <h1>O que você quer assistir?</h1>
+            <p class="pagina-sub">Digite o nome de um filme ou de uma categoria (terror, ação, comédia…) na barra de busca.</p>
+        }
+        else
+        {
+            <h1>Resultados para “@Model.Termo”</h1>
+            <p class="pagina-sub">@Model.Filmes.Count filme(s) encontrado(s) pelo nome ou pela categoria.</p>
+        }
+    </header>
+
+    @if (Model.Erro is not null)
+    {
+        <div class="aviso aviso-erro" role="alert">@Model.Erro</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.Termo) && Model.Filmes.Count == 0 && Model.Erro is null)
+    {
+        <p class="vazio">Nenhum filme combina com a sua busca. Tente outro nome ou veja o <a asp-action="Index">catálogo completo</a>.</p>
+    }
+
+    <div class="fila">
+        @foreach (var filme in Model.Filmes)
+        {
+            <partial name="_FilmeCard" model="filme" />
+        }
+    </div>
+</section>

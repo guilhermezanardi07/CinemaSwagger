@@ -1,0 +1,63 @@
+@model List<FilmeResposta>
+@{
+    ViewData["Title"] = "Gerenciar filmes";
+}
+
+<section class="container pagina">
+    <header class="pagina-cabecalho pagina-cabecalho-linha">
+        <div>
+            <span class="kicker">Administração</span>
+            <h1>Gerenciar filmes</h1>
+        </div>
+        <a class="btn-reservar" asp-action="Criar">+ Novo filme</a>
+    </header>
+
+    @if (ViewData["Erro"] is string erroApi)
+    {
+        <div class="aviso aviso-erro" role="alert">@erroApi</div>
+    }
+
+    @if (Model.Count == 0)
+    {
+        <p class="vazio">Nenhum filme cadastrado.</p>
+    }
+    else
+    {
+        <div class="tabela-caixa">
+            <table class="tabela">
+                <thead>
+                    <tr>
+                        <th>Id</th><th>Título</th><th>Gênero</th><th>Duração</th><th>Classif.</th><th>Situação</th><th class="col-acoes">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model)
+                    {
+                        <tr>
+                            <td>@f.Id</td>
+                            <td>@f.Titulo</td>
+                            <td>@f.Genero</td>
+                            <td>@f.DuracaoMinutos min</td>
+                            <td>@f.Classificacao</td>
+                            <td>
+                                @if (f.EmCartaz) { <b class="selo selo-ok">Em cartaz</b> }
+                                else { <b class="selo selo-off">Fora de cartaz</b> }
+                            </td>
+                            <td class="col-acoes">
+                                <a class="btn-mini" asp-action="Editar" asp-route-id="@f.Id">Editar</a>
+                                <a class="btn-mini" asp-controller="Sessoes" asp-action="Criar" asp-route-filmeId="@f.Id">+ Sessão</a>
+                                <form asp-action="AlterarCartaz" asp-route-id="@f.Id" asp-route-valor="@(!f.EmCartaz)" method="post" class="form-inline">
+                                    <button type="submit" class="btn-mini">@(f.EmCartaz ? "Tirar de cartaz" : "Pôr em cartaz")</button>
+                                </form>
+                                <form asp-action="Excluir" asp-route-id="@f.Id" method="post" class="form-inline"
+                                      data-confirmar="Excluir o filme &quot;@f.Titulo&quot;? Esta ação não pode ser desfeita.">
+                                    <button type="submit" class="btn-mini btn-mini-perigo">Excluir</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

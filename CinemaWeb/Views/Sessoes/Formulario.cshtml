@@ -1,0 +1,65 @@
+@model SessaoFormViewModel
+@{
+    var id = ViewData["Id"] as int?;
+    var editando = id.HasValue;
+    ViewData["Title"] = editando ? "Editar sessão" : "Nova sessão";
+}
+
+<section class="container pagina pagina-estreita">
+    <header class="pagina-cabecalho">
+        <span class="kicker">Administração</span>
+        <h1>@ViewData["Title"]</h1>
+    </header>
+
+    <form class="formulario" method="post" asp-action="@(editando ? "Editar" : "Criar")" asp-route-id="@id" novalidate>
+        <div asp-validation-summary="ModelOnly" class="aviso aviso-erro" role="alert"></div>
+
+        <div class="campo">
+            <label asp-for="FilmeId"></label>
+            <select asp-for="FilmeId">
+                <option value="0">Selecione um filme…</option>
+                @foreach (var filme in Model.Filmes)
+                {
+                    <option value="@filme.Id" selected="@(Model.FilmeId == filme.Id)">@filme.Titulo</option>
+                }
+            </select>
+            <span asp-validation-for="FilmeId" class="erro-campo"></span>
+        </div>
+
+        <div class="campo-linha">
+            <div class="campo">
+                <label asp-for="Sala"></label>
+                <input asp-for="Sala" maxlength="30" placeholder="Sala 1" />
+                <span asp-validation-for="Sala" class="erro-campo"></span>
+            </div>
+            <div class="campo">
+                <label asp-for="DataHoraLocal"></label>
+                <input id="DataHoraLocal" name="DataHoraLocal" type="datetime-local"
+                       value="@Model.DataHoraLocal.ToString("yyyy-MM-dd'T'HH:mm")" />
+                <span asp-validation-for="DataHoraLocal" class="erro-campo"></span>
+            </div>
+        </div>
+
+        <div class="campo-linha">
+            <div class="campo">
+                <label asp-for="Preco"></label>
+                <input id="Preco" name="Preco" type="text" inputmode="decimal" value="@Model.Preco.ToString("0.00")" placeholder="25,00" />
+                <span asp-validation-for="Preco" class="erro-campo"></span>
+            </div>
+            <div class="campo">
+                <label asp-for="Capacidade"></label>
+                <input asp-for="Capacidade" type="number" min="1" max="1000" />
+                <span asp-validation-for="Capacidade" class="erro-campo"></span>
+            </div>
+        </div>
+
+        <div class="formulario-acoes">
+            <button type="submit" class="btn-reservar">@(editando ? "Salvar alterações" : "Cadastrar sessão")</button>
+            <a class="btn-saiba" asp-action="Gerenciar">Cancelar</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,40 @@
+@model SessoesViewModel
+@{
+    ViewData["Title"] = "Sessões";
+}
+
+<section class="container pagina">
+    <header class="pagina-cabecalho">
+        <span class="kicker">Programação</span>
+        <h1>Próximas sessões</h1>
+        <p class="pagina-sub">Os lugares livres são calculados na hora, descontando as reservas confirmadas.</p>
+    </header>
+
+    <form class="filtro" method="get" asp-action="Index" data-autosubmit>
+        <label for="filmeId">Filtrar por filme</label>
+        <select id="filmeId" name="filmeId">
+            <option value="">Todos os filmes</option>
+            @foreach (var filme in Model.Filmes)
+            {
+                <option value="@filme.Id" selected="@(Model.FilmeId == filme.Id)">@filme.Titulo</option>
+            }
+        </select>
+        <noscript><button type="submit" class="btn-saiba">Filtrar</button></noscript>
+    </form>
+
+    @if (Model.Erro is not null)
+    {
+        <div class="aviso aviso-erro" role="alert">@Model.Erro</div>
+    }
+    else if (Model.Sessoes.Count == 0)
+    {
+        <p class="vazio">Nenhuma sessão futura encontrada.</p>
+    }
+
+    <div class="ingressos">
+        @foreach (var s in Model.Sessoes)
+        {
+            <partial name="_Ingresso" model="s" />
+        }
+    </div>
+</section>
