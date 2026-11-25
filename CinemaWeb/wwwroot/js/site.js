@@ -19,8 +19,14 @@
         gravar(CHAVE_TAMANHO, tamanho);
     }
 
+    // Restaura o tamanho salvo assim que a página carrega.
+    aplicarTamanho();
+
     // ---------------------------------------------------- Contraste
     function contrasteAtivo() { return raiz.classList.contains('alto-contraste'); }
+
+    // Restaura a preferência de contraste salva anteriormente.
+    if (ler(CHAVE_CONTRASTE) === '1') raiz.classList.add('alto-contraste');
 
     function sincronizarBotaoContraste() {
         var botao = document.querySelector('[data-acao="contraste"]');
@@ -94,11 +100,11 @@
 
         campo.addEventListener('input', function () {
             var termo = campo.value.trim();
+            ultimo = termo;
             clearTimeout(espera);
             if (termo.length < 2) { fechar(); return; }
 
             espera = setTimeout(function () {
-                ultimo = termo;
                 fetch(urlBase + '?termo=' + encodeURIComponent(termo), { headers: { 'Accept': 'application/json' } })
                     .then(function (r) { return r.ok ? r.json() : []; })
                     .then(function (itens) { if (termo === ultimo) mostrar(itens); })
